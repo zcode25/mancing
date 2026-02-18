@@ -216,7 +216,14 @@ const indexView = document.getElementById('index-view');
 
 function updateUI() {
     moneyEl.textContent = state.money;
-    pointsEl.textContent = state.points;
+    pointsEl.textContent = `${state.points} / 30000`;
+
+    // WIN CONDITION
+    if (state.points >= 30000 && !state.hasWon) {
+        state.hasWon = true;
+        showVictory();
+        playSound('win'); // Assuming 'win' sound exists or will play fallback
+    }
     const baitCountEl = document.getElementById('bait-count');
     if (baitCountEl) baitCountEl.textContent = state.player.baitCount;
     updateLeaderboard();
@@ -2472,3 +2479,53 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+function showVictory() {
+    const victoryModal = document.createElement('div');
+    victoryModal.style.position = 'fixed';
+    victoryModal.style.top = '0';
+    victoryModal.style.left = '0';
+    victoryModal.style.width = '100%';
+    victoryModal.style.height = '100%';
+    victoryModal.style.backgroundColor = 'rgba(0,0,0,0.85)';
+    victoryModal.style.display = 'flex';
+    victoryModal.style.flexDirection = 'column';
+    victoryModal.style.justifyContent = 'center';
+    victoryModal.style.alignItems = 'center';
+    victoryModal.style.zIndex = '2000';
+    victoryModal.style.color = '#ffd700';
+    victoryModal.style.fontFamily = "'Press Start 2P', cursive"; // Fallback to standard if not loaded
+    victoryModal.style.textAlign = 'center';
+    victoryModal.style.animation = 'fadeIn 1s ease-out';
+
+    victoryModal.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 20px; text-shadow: 0 0 20px gold;">🏆 VICTORY! 🏆</div>
+        <div style="font-size: 1.5rem; color: #fff; margin-bottom: 30px;">You reached 30,000 Points!</div>
+        <div style="font-size: 1rem; color: #aaa; margin-bottom: 40px; max-width: 600px; line-height: 1.6;">
+            You have proven yourself as the ultimate Fishing Master.<br>
+            The Maniac Bots bow before your skills!
+        </div>
+        <button id="continue-btn" style="
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            border: none;
+            border-radius: 50px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+            transition: transform 0.2s;
+        ">Continue Endless Mode</button>
+    `;
+
+    document.body.appendChild(victoryModal);
+
+    document.getElementById('continue-btn').onclick = () => {
+        victoryModal.style.opacity = '0';
+        setTimeout(() => victoryModal.remove(), 500);
+    };
+
+    // Confetti Effect (Simple CSS/JS implementation could go here, but keeping it simple for now)
+    playSound('win');
+}
