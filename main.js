@@ -1639,11 +1639,30 @@ function updateInventoryUI() {
     const shopSellEl = document.getElementById('shop-sell-list');
 
     if (state.inventory.length === 0) {
-        const emptyMsg = '<p style="text-align:center; opacity:0.5; padding:20px;">Your backpack is empty.</p>';
-        if (backpackEl) backpackEl.innerHTML = emptyMsg;
-        if (shopSellEl) shopSellEl.innerHTML = emptyMsg;
+        // Create the empty message element
+        const emptyMsg = `
+            <div class="empty-state">
+                <div style="font-size: 3rem; margin-bottom: 10px;">🎒</div>
+                <div>Your backpack is empty</div>
+                <div style="font-size: 0.8rem; margin-top: 5px;">Go catch some fish!</div>
+            </div>
+        `;
+
+        if (backpackEl) {
+            backpackEl.innerHTML = emptyMsg;
+            backpackEl.classList.add('is-empty');
+        }
+
+        if (shopSellEl) {
+            shopSellEl.innerHTML = emptyMsg;
+            shopSellEl.classList.add('is-empty');
+        }
         return;
     }
+
+    // Not empty: check if elements exist before removing class
+    if (backpackEl) backpackEl.classList.remove('is-empty');
+    if (shopSellEl) shopSellEl.classList.remove('is-empty');
 
     // Helper to get emoji
     const getRarityEmoji = (r) => r === 'BOSS' ? '🐙' : (r === 'Legend' ? '🌟' : (r === 'Rare' ? '💎' : '🐟'));
