@@ -31,15 +31,15 @@ const FISH_TYPES = [
 
 const UPGRADE_ITEMS = {
     rod: [
-        { id: 'rod_1', name: 'Carbon Rod', price: 100, desc: 'Faster reeling speed', value: 0.7 },
-        { id: 'rod_2', name: 'Golden Rod', price: 500, desc: 'Ultra fast reeling & higher luck', value: 0.4 }
+        { id: 'rod_1', name: 'Carbon Rod', price: 2500, desc: 'Faster reeling speed', value: 0.7 },
+        { id: 'rod_2', name: 'Golden Rod', price: 15000, desc: 'Ultra fast reeling & higher luck', value: 0.4 }
     ],
     bag: [
-        { id: 'bag_1', name: 'Medium Bag', price: 150, desc: 'Carry 10 fish', value: 10 },
-        { id: 'bag_2', name: 'Large Bag', price: 400, desc: 'Carry 20 fish', value: 20 }
+        { id: 'bag_1', name: 'Medium Bag', price: 1500, desc: 'Carry 10 fish', value: 10 },
+        { id: 'bag_2', name: 'Large Bag', price: 8000, desc: 'Carry 20 fish', value: 20 }
     ],
     bait: [
-        { id: 'bait_1', name: 'Premium Worms', price: 50, desc: 'Higher chance for Rare fish', value: 0.1 }
+        { id: 'bait_1', name: 'Premium Worms', price: 150, desc: 'Higher chance for Rare fish', value: 0.1 }
     ]
 };
 
@@ -2135,7 +2135,7 @@ function animate() {
         } else if (bot.state.startsWith('walking')) {
 
             const dir = new THREE.Vector3().subVectors(bot.target, bot.pos).normalize();
-            const moveStep = dir.clone().multiplyScalar(delta * 3);
+            const moveStep = dir.clone().multiplyScalar(delta * 6); // Maniac Speed from 3 to 6
             bot.pos.add(moveStep);
 
             const botY = getTerrainHeight(bot.pos.x, bot.pos.z);
@@ -2153,7 +2153,7 @@ function animate() {
             if (bot.pos.distanceTo(bot.target) < 1) {
                 if (bot.state === 'walking_to_fish') {
                     bot.state = 'fishing';
-                    bot.timer = 5 + Math.random() * 5;
+                    bot.timer = 1.5 + Math.random() * 2.0; // Maniac: Fast reflexes (was 5-10s)
                     bot.limbs.rod.visible = true; // Show rod for fishing
                     bot.rodTension = 0; // Initialize tension
                     // Reset pose for fishing
@@ -2170,30 +2170,28 @@ function animate() {
                         showMessage(`💰 ${bot.name} sold fish for $${soldValue}`);
                     }
 
-                    // Strategic Reinvestment (Buying on arrival)
-                    const p = bot.personality;
+                    // Maniac Smart Economy: Strict Priority (Rod > Bag > Bait)
+                    // Always try to upgrade immediately if possible
+
                     const canAffordRod = (lvl) => UPGRADE_ITEMS.rod[lvl] && bot.money >= UPGRADE_ITEMS.rod[lvl].price;
                     const canAffordBag = (lvl) => UPGRADE_ITEMS.bag[lvl] && bot.money >= UPGRADE_ITEMS.bag[lvl].price;
                     const canAffordBait = () => bot.money >= 50;
 
-                    const bagCapacity = bot.upgrades.bag === 2 ? 20 : (bot.upgrades.bag === 1 ? 10 : 5);
-                    if (p === 'speed') {
-                        if (canAffordRod(bot.upgrades.rod)) buyBotUpgrade(bot, 'rod');
-                        else if (bot.baitCount < 5 && canAffordBait()) buyBotUpgrade(bot, 'bait');
-                    } else if (p === 'luck') {
-                        if (bot.baitCount < bagCapacity && canAffordBait()) buyBotUpgrade(bot, 'bait');
-                        else if (canAffordRod(bot.upgrades.rod)) buyBotUpgrade(bot, 'rod');
-                    } else if (p === 'hoarder') {
-                        if (canAffordBag(bot.upgrades.bag)) buyBotUpgrade(bot, 'bag');
-                        else if (bot.baitCount < 5 && canAffordBait()) buyBotUpgrade(bot, 'bait');
-                    } else { // balanced
-                        if (bot.upgrades.rod <= bot.upgrades.bag && canAffordRod(bot.upgrades.rod)) buyBotUpgrade(bot, 'rod');
-                        else if (canAffordBag(bot.upgrades.bag)) buyBotUpgrade(bot, 'bag');
-                        else if (bot.baitCount < 10 && canAffordBait()) buyBotUpgrade(bot, 'bait');
+                    // 1. Force Rod Upgrade (Power)
+                    if (canAffordRod(bot.upgrades.rod)) {
+                        buyBotUpgrade(bot, 'rod');
+                    }
+                    // 2. Force Bag Upgrade (Efficiency)
+                    else if (canAffordBag(bot.upgrades.bag)) {
+                        buyBotUpgrade(bot, 'bag');
+                    }
+                    // 3. Buy Bait if low (Sustain)
+                    else if (bot.baitCount < 10 && canAffordBait()) {
+                        buyBotUpgrade(bot, 'bait');
                     }
 
                     bot.state = 'idle';
-                    bot.timer = 2;
+                    bot.timer = 0.5; // Maniac: No downtime (was 2s)
                     updateLeaderboard();
                 }
             }
@@ -2298,7 +2296,7 @@ function animate() {
                 updateLeaderboard();
 
                 bot.state = 'idle';
-                bot.timer = 1;
+                bot.timer = 0.5; // Maniac: Instant retry
                 bot.limbs.rod.visible = false;
                 bot.limbs.line.visible = false;
                 bot.limbs.bobber.visible = false;
