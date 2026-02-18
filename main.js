@@ -1325,6 +1325,7 @@ const mobileActionBtn = document.getElementById('mobile-action-btn');
 
 let joystickActive = false;
 let joystickStart = { x: 0, y: 0 };
+const joystickRange = 50;
 const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
 // Show mobile controls on first touch
