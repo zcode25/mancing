@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mancing - Ultimate Fishing 3D</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Start Screen Overlay -->
+        <div id="start-screen">
+            <div class="start-content">
+                <h1>Mancing Mania 🎣</h1>
+                <p>Island Adventure</p>
+                <div class="controls-hint">
+                    <p>WASD to Move • Mouse to Look</p>
+                    <p>E to Cast/Reel • F to Interact</p>
+                </div>
+                <button id="start-btn">START GAME</button>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div id="game-over-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>🎣 Fishing Trip Over! 🎣</h2>
+                <div id="game-stats">
+                    <!-- Stats injected by JS -->
+                </div>
+                <button id="restart-btn" onclick="location.reload()">Play Again</button>
+            </div>
+        </div>
+
+        <div id="ui-overlay" class="hidden">
+            <div class="stats">
+                <div class="stat-item">💰 $<span id="money">0</span></div>
+                <div class="stat-item">🏆 <span id="points">0</span> pts</div>
+                <div class="stat-item">🪱 <span id="bait-count">0</span></div>
+                <div class="stat-item clock" id="game-clock">12:00 PM</div>
+            </div>
+
+            <div class="top-rights">
+                <div id="sound-toggle" class="btn-circular">🔇</div>
+                <div id="inventory-toggle" class="btn-circular">🎒</div>
+                <div id="finish-btn" class="btn-circular" style="background:var(--accent); color:white"
+                    title="Finish Game">🏁</div>
+            </div>
+
+            <div id="interact-prompt" class="hidden">Press [F] to Interact</div>
+            <div id="npc-dialogue" class="hidden">
+                <span id="npc-name"></span>: <span id="npc-text"></span>
+            </div>
+
+            <div id="message-container"></div>
+
+            <div id="leaderboard">
+                <div class="lb-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <h4 style="margin:0">🏆 Leaderboard</h4>
+                    <button id="lb-toggle-btn"
+                        style="background:none; border:none; cursor:pointer; font-size:1rem; color:var(--primary); padding:5px;">▼</button>
+                </div>
+                <div id="leaderboard-entries"></div>
+            </div>
+
+            <!-- Mobile Controls -->
+            <div id="mobile-controls" class="hidden">
+                <div id="joystick-container">
+                    <div id="joystick-base">
+                        <div id="joystick-knob"></div>
+                    </div>
+                </div>
+                <div id="mobile-actions">
+                    <button id="mobile-e-btn" class="mobile-btn">🎣</button>
+                    <button id="mobile-space-btn" class="mobile-btn">⬆️</button>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="game-ui">
+            <!-- Modal for Inventory -->
+            <div id="inventory-modal" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close-btn">&times;</span>
+                    <h3>🎒 Inventory</h3>
+
+                    <div class="shop-tabs">
+                        <button id="tab-backpack" class="tab-btn active">🎒 Backpack</button>
+                        <button id="tab-index" class="tab-btn">📖 Fish Index</button>
+                    </div>
+
+                    <div id="backpack-view" class="shop-view">
+                        <div id="backpack-list"></div>
+                    </div>
+
+                    <div id="index-view" class="shop-view hidden">
+                        <div id="fish-index-list" class="index-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal for Shop -->
+            <div id="shop-modal" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close-btn">&times;</span>
+                    <h2>🏪 Island Shop</h2>
+
+                    <div class="shop-tabs">
+                        <button id="tab-sell" class="tab-btn active">💰 Sell Fish</button>
+                        <button id="tab-upgrade" class="tab-btn">🔝 Upgrades</button>
+                    </div>
+
+
+                    <div id="shop-sell-view" class="shop-view">
+                        <p>Sell your catch for money and points!</p>
+                        <div id="shop-sell-list" class="inventory-grid"></div>
+                        <button id="sell-all-btn" class="btn-primary">Sell All Fish</button>
+                    </div>
+
+                    <div id="shop-upgrade-view" class="hidden shop-view">
+                        <p>Better gear means better fish!</p>
+                        <div id="upgrade-list" class="upgrade-grid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+    </div>
+    <script type="module" src="/main.js"></script>
+</body>
+
+</html>
