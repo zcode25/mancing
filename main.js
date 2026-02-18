@@ -1,7 +1,3 @@
-import './style.css'
-import * as THREE from 'three';
-import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
-
 // Game Constants
 const FISH_TYPES = [
     // Common
