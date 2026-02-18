@@ -941,6 +941,63 @@ html {
         height: 80px;
         font-size: 2.2rem;
     }
+
+    /* Responsive Modals */
+    .modal-content,
+    #shop-modal .modal-content {
+        padding: 25px 20px;
+        border-radius: 24px;
+        width: 92%;
+        max-width: 95%;
+        margin: 0 10px;
+    }
+
+    .modal-content h2,
+    .modal-content h3 {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+    }
+
+    .shop-tabs {
+        padding: 4px;
+        margin-bottom: 15px;
+    }
+
+    .tab-btn {
+        padding: 10px;
+        font-size: 0.85rem;
+    }
+
+    .inventory-grid,
+    .index-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 8px;
+        max-height: 50vh;
+    }
+
+    .inv-item,
+    .index-item {
+        padding: 10px;
+        font-size: 0.8rem;
+    }
+
+    .upgrade-item {
+        padding: 15px;
+        border-radius: 18px;
+    }
+
+    .upgrade-info h4 {
+        font-size: 1rem;
+    }
+
+    .upgrade-info p {
+        font-size: 0.8rem;
+    }
+
+    .buy-btn {
+        padding: 10px 15px;
+        font-size: 0.8rem;
+    }
 }
 
 /* Leaderboard Toggle styling */
