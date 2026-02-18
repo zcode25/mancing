@@ -2153,7 +2153,8 @@ function animate() {
             if (bot.pos.distanceTo(bot.target) < 1) {
                 if (bot.state === 'walking_to_fish') {
                     bot.state = 'fishing';
-                    bot.timer = 1.5 + Math.random() * 2.0; // Maniac: Fast reflexes (was 5-10s)
+                    // Maniac: Fast but FAIR (Matches player's 4.0s - 7.0s)
+                    bot.timer = 4.0 + Math.random() * 3.0;
                     bot.limbs.rod.visible = true; // Show rod for fishing
                     bot.rodTension = 0; // Initialize tension
                     // Reset pose for fishing
