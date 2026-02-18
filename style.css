@@ -666,6 +666,7 @@ html {
         transform: translateY(0);
     }
 }
+
 /* Leaderboard & Index Badges */
 .badge {
     padding: 2px 6px;
@@ -717,7 +718,7 @@ html {
 .index-item.locked {
     opacity: 0.6;
     filter: grayscale(1);
-    background: rgba(0,0,0,0.05);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .index-item.caught {
@@ -748,10 +749,21 @@ html {
     margin-top: 2px;
 }
 
-.index-rarity.common { color: #7f8c8d; }
-.index-rarity.rare { color: #3498db; }
-.index-rarity.legend { color: #f1c40f; }
-.index-rarity.boss { color: #e74c3c; }
+.index-rarity.common {
+    color: #7f8c8d;
+}
+
+.index-rarity.rare {
+    color: #3498db;
+}
+
+.index-rarity.legend {
+    color: #f1c40f;
+}
+
+.index-rarity.boss {
+    color: #e74c3c;
+}
 
 .sell-btn-large {
     width: 100%;
@@ -779,7 +791,7 @@ html {
     align-items: center;
     justify-content: center;
     margin-right: 20px;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
     flex-shrink: 0;
 }
 
@@ -854,7 +866,8 @@ html {
     bottom: 40px;
     right: 40px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: flex-end;
     gap: 20px;
     pointer-events: auto;
 }

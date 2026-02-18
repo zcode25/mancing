@@ -905,7 +905,7 @@ const mobileControls = document.getElementById('mobile-controls');
 const joystickContainer = document.getElementById('joystick-container');
 const joystickKnob = document.getElementById('joystick-knob');
 const mobileEBtn = document.getElementById('mobile-e-btn');
-const mobileSpaceBtn = document.getElementById('mobile-space-btn');
+const mobileFBtn = document.getElementById('mobile-f-btn');
 
 let joystickActive = false;
 let joystickStart = { x: 0, y: 0 };
@@ -969,18 +969,13 @@ if (joystickContainer) {
 if (mobileEBtn) {
     mobileEBtn.addEventListener('touchstart', (e) => {
         handleFishingInput();
-        handleInteraction(); // For shop/chest
         e.preventDefault();
     }, { passive: false });
 }
 
-if (mobileSpaceBtn) {
-    mobileSpaceBtn.addEventListener('touchstart', (e) => {
-        state.keys.space = true;
-        e.preventDefault();
-    }, { passive: false });
-    mobileSpaceBtn.addEventListener('touchend', (e) => {
-        state.keys.space = false;
+if (mobileFBtn) {
+    mobileFBtn.addEventListener('touchstart', (e) => {
+        handleInteraction();
         e.preventDefault();
     }, { passive: false });
 }
