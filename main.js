@@ -350,6 +350,13 @@ function updateLeaderboard() {
     // Sort by points for more competitive feel
     players.sort((a, b) => b.points - a.points);
 
+    // DEFEAT CONDITION
+    const topBot = players.find(p => !p.isPlayer);
+    if (topBot && topBot.points >= 30000 && !state.hasWon) {
+        state.hasWon = true; // Use same flag to stop game
+        showDefeat(topBot.name);
+    }
+
     lbEntriesEl.innerHTML = players.map(p => `
         <div class="lb-entry ${p.isPlayer ? 'player' : ''}" style="align-items: flex-start; padding: 8px 0;">
             <div style="display:flex; flex-direction:column; gap: 2px; flex: 1;">
@@ -2523,4 +2530,52 @@ function showVictory() {
 
     // Confetti Effect (Simple CSS/JS implementation could go here, but keeping it simple for now)
     playSound('win');
+}
+
+function showDefeat(winnerName) {
+    const defeatModal = document.createElement('div');
+    defeatModal.style.position = 'fixed';
+    defeatModal.style.top = '0';
+    defeatModal.style.left = '0';
+    defeatModal.style.width = '100%';
+    defeatModal.style.height = '100%';
+    defeatModal.style.backgroundColor = 'rgba(40,0,0,0.9)';
+    defeatModal.style.display = 'flex';
+    defeatModal.style.flexDirection = 'column';
+    defeatModal.style.justifyContent = 'center';
+    defeatModal.style.alignItems = 'center';
+    defeatModal.style.zIndex = '2000';
+    defeatModal.style.color = '#ff4444';
+    defeatModal.style.fontFamily = "'Press Start 2P', cursive";
+    defeatModal.style.textAlign = 'center';
+    defeatModal.style.animation = 'fadeIn 1s ease-out';
+
+    defeatModal.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 20px; text-shadow: 0 0 20px red;">💀 DEFEAT 💀</div>
+        <div style="font-size: 1.5rem; color: #fff; margin-bottom: 30px;">${winnerName} reached 30,000 Points First!</div>
+        <div style="font-size: 1rem; color: #aaa; margin-bottom: 40px; max-width: 600px; line-height: 1.6;">
+            The Maniac Bots have outfished you.<br>
+            Better luck next time, rookie.
+        </div>
+        <button id="retry-btn" style="
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #ff4444, #880000);
+            border: none;
+            border-radius: 50px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.4);
+            transition: transform 0.2s;
+        ">Try Again (Restart)</button>
+    `;
+
+    document.body.appendChild(defeatModal);
+
+    document.getElementById('retry-btn').onclick = () => {
+        location.reload(); // Simple restart
+    };
+
+    playSound('lose'); // Fallback if no lose sound
 }
