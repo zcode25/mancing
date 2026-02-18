@@ -1328,6 +1328,10 @@ let joystickStart = { x: 0, y: 0 };
 const joystickRange = 50;
 const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
+let touchRotationActive = false;
+let lastTouchX = 0;
+let lastTouchY = 0;
+
 // Show mobile controls on first touch
 window.addEventListener('touchstart', function onFirstTouch() {
     if (mobileControls) mobileControls.classList.remove('hidden');
@@ -1405,6 +1409,42 @@ if (mobileActionBtn) {
     mobileActionBtn.addEventListener('pointerdown', handleAction);
     mobileActionBtn.addEventListener('touchstart', handleAction, { passive: false });
 }
+
+// --- Mobile Touch Camera Rotation ---
+window.addEventListener('touchstart', (e) => {
+    // Only track if not touching a UI element (buttons, joystick)
+    const touch = e.touches[0];
+    const target = e.target;
+
+    // Skip if touching joystick or buttons
+    if (target.closest('.mobile-btn') || target.closest('#joystick-container')) return;
+
+    touchRotationActive = true;
+    lastTouchX = touch.clientX;
+    lastTouchY = touch.clientY;
+}, { passive: true });
+
+window.addEventListener('touchmove', (e) => {
+    if (!touchRotationActive) return;
+
+    const touch = e.touches[0];
+    const dx = touch.clientX - lastTouchX;
+    const dy = touch.clientY - lastTouchY;
+
+    // Update camera targets
+    state.camera.targetYaw -= dx * 0.005;
+    state.camera.targetPitch -= dy * 0.005;
+
+    // Limit pitch (same as mouse)
+    state.camera.targetPitch = Math.max(-1.0, Math.min(0.2, state.camera.targetPitch));
+
+    lastTouchX = touch.clientX;
+    lastTouchY = touch.clientY;
+}, { passive: false });
+
+window.addEventListener('touchend', () => {
+    touchRotationActive = false;
+});
 
 function updateMobileActionUI() {
     if (!mobileActionBtn) return;
