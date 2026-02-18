@@ -1384,8 +1384,12 @@ if (joystickContainer) {
 }
 
 if (mobileActionBtn) {
-    mobileActionBtn.addEventListener('touchstart', (e) => {
-        // Smart decision: Interaction has priority if in range
+    const handleAction = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
         const playerPos = state.player.mesh.position;
         const distToShop = Math.hypot(playerPos.x - state.stations.shop.position.x, playerPos.z - state.stations.shop.position.z);
         const distToChest = Math.hypot(playerPos.x - state.stations.chest.position.x, playerPos.z - state.stations.chest.position.z);
@@ -1395,8 +1399,11 @@ if (mobileActionBtn) {
         } else {
             handleFishingInput();
         }
-        e.preventDefault();
-    }, { passive: false });
+    };
+
+    // Use both for maximum compatibility
+    mobileActionBtn.addEventListener('pointerdown', handleAction);
+    mobileActionBtn.addEventListener('touchstart', handleAction, { passive: false });
 }
 
 function updateMobileActionUI() {
@@ -1839,7 +1846,7 @@ function animate() {
         else starfield.visible = true;
     }
 
-    if (controls.isLocked) {
+    if (controls.isLocked || isMobile) {
 
         velocity.x -= velocity.x * 10.0 * delta;
         velocity.z -= velocity.z * 10.0 * delta;
