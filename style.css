@@ -970,15 +970,54 @@ html {
 
     .inventory-grid,
     .index-grid {
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 8px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
         max-height: 50vh;
+        padding: 5px;
     }
 
     .inv-item,
     .index-item {
-        padding: 10px;
-        font-size: 0.8rem;
+        flex-direction: column;
+        text-align: center;
+        padding: 8px 4px;
+        gap: 4px;
+        font-size: 0.7rem;
+        min-width: 0;
+        /* Allow shrinking */
+    }
+
+    .fish-icon-inline,
+    .index-icon {
+        font-size: 1.5rem;
+        margin: 0;
+    }
+
+    .fish-details,
+    .index-info {
+        width: 100%;
+    }
+
+    .fish-name,
+    .index-name {
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.65rem;
+        display: block;
+    }
+
+    .fish-rarity,
+    .index-rarity {
+        display: none;
+    }
+
+    .sell-btn-small {
+        margin-top: 5px;
+        width: 100%;
+        padding: 4px 0;
+        font-size: 0.6rem;
     }
 
     .upgrade-item {
