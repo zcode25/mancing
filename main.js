@@ -1578,6 +1578,7 @@ function catchFish() {
 
         playSound('catch', 0.5);
         updateInventoryUI();
+        renderFishIndex(); // Force update index immediately
         updateUI();
 
         state.player.isFishing = false;
@@ -2415,6 +2416,9 @@ startBtn.onclick = () => {
 
     // Init Audio (solving autoplay policy)
     initAudio();
+
+    // Initialize UI
+    updateInventoryUI();
 
     // Lock pointer to start
     controls.lock();
