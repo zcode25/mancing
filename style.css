@@ -868,7 +868,7 @@ html {
     display: flex;
     flex-direction: row;
     align-items: flex-end;
-    gap: 20px;
+    gap: 30px;
     pointer-events: auto;
 }
 
