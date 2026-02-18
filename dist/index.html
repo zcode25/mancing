@@ -6,8 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mancing - Ultimate Fishing 3D</title>
     <link rel="icon" type="image/png" href="/assets/favicon-DXa5m79N.png" />
-  <script type="module" crossorigin src="/assets/index-XAfNDpIJ.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-DJsnd0sl.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.182.0/build/three.module.js",
+                "three/examples/jsm/controls/PointerLockControls": "https://unpkg.com/three@0.182.0/examples/jsm/controls/PointerLockControls.js"
+            }
+        }
+    </script>
+  <script type="module" crossorigin src="/assets/index-BBakU6Ci.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DrvJXqUv.css">
 </head>
 
 <body>
@@ -41,7 +49,10 @@
                 <div class="stat-item">💰 $<span id="money">0</span></div>
                 <div class="stat-item">🏆 <span id="points">0</span> pts</div>
                 <div class="stat-item">🪱 <span id="bait-count">0</span></div>
-                <div class="stat-item clock" id="game-clock">12:00 PM</div>
+                <div class="stat-item clock" id="game-clock">
+                    <span id="clock-icon">☀️</span>
+                    <span id="clock-text">12:00 PM</span>
+                </div>
             </div>
 
             <div class="top-rights">
@@ -75,8 +86,7 @@
                     </div>
                 </div>
                 <div id="mobile-actions">
-                    <button id="mobile-e-btn" class="mobile-btn">🎣</button>
-                    <button id="mobile-space-btn" class="mobile-btn">⬆️</button>
+                    <button id="mobile-action-btn" class="mobile-btn">🎣</button>
                 </div>
             </div>
         </div>
@@ -132,6 +142,7 @@
 
         <canvas id="gameCanvas"></canvas>
     </div>
+
 </body>
 
 </html>

@@ -51,7 +51,7 @@ let state = {
     points: 0,
     inventory: [],
     world: {
-        time: 8, // Start at 8 AM
+        time: Math.random() * 24, // Starting at a random time of day
         timeSpeed: 0.02, // Hours per real second (1 hour = 50s)
         isNight: false,
         bossEvent: null // "The Great Kraken" or null
@@ -106,7 +106,7 @@ let state = {
         targetPitch: -0.4
     },
     stations: {
-        shop: { position: new THREE.Vector3(-8, 0, -8), radius: 5, npc: "Old Man Jenkins", dialogue: "Fresh fish for sale! Best prices on the island." },
+        shop: { position: new THREE.Vector3(-8, 0, -8), radius: 5, npc: "Old Jenkins", dialogue: "Fresh fish for sale! Best prices on the island." },
         chest: { position: new THREE.Vector3(8, 0, -8), radius: 5, npc: "Security Bob", dialogue: "Your loot is safe with me. Want to check your stash?" }
     },
     botsBase: [
@@ -229,7 +229,10 @@ function updateClockUI() {
     const minutes = Math.floor((state.world.time % 1) * 60);
     const ampm = hours >= 12 ? 'PM' : 'AM';
     const displayHours = hours % 12 || 12;
-    clockEl.textContent = `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    const clockText = document.getElementById('clock-text');
+    const clockIcon = document.getElementById('clock-icon');
+    if (clockText) clockText.textContent = `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    if (clockIcon) clockIcon.textContent = state.world.isNight ? '🌙' : '☀️';
 }
 
 
@@ -326,7 +329,7 @@ function updateLeaderboard() {
             rarityStats: state.player.rarityStats,
             isPlayer: true,
             status: state.player.isFishing ? 'Fishing' : 'Running',
-            gear: `${state.player.upgrades.rod.name}${state.player.hasBait ? ' + Bait' : ''}`
+            gear: `${state.player.upgrades.rod.name}${state.player.baitCount > 0 ? ` +${state.player.baitCount}` : ''}`
         },
         ...state.bots.map(b => ({
             name: b.name,
@@ -335,7 +338,7 @@ function updateLeaderboard() {
             rarityStats: b.rarityStats,
             isPlayer: false,
             status: b.state.replace(/_/g, ' '),
-            gear: `${b.upgrades.rod === 2 ? 'Golden Rod' : (b.upgrades.rod === 1 ? 'Carbon Rod' : 'Basic Rod')}${b.hasBait ? ' + Bait' : ''}`
+            gear: `${b.upgrades.rod === 2 ? 'Golden Rod' : (b.upgrades.rod === 1 ? 'Carbon Rod' : 'Basic Rod')}${b.baitCount > 0 ? ` +${b.baitCount}` : ''}`
         }))
     ];
     // Sort by points for more competitive feel
@@ -476,48 +479,107 @@ const skyMat = new THREE.MeshBasicMaterial({ color: '#87CEEB', side: THREE.BackS
 const sky = new THREE.Mesh(skyGeo, skyMat);
 scene.add(sky);
 
+// --- Starfield ---
+const starsCount = 2000;
+const starsGeo = new THREE.BufferGeometry();
+const starsPos = new Float32Array(starsCount * 3);
+for (let i = 0; i < starsCount; i++) {
+    const r = 140 + Math.random() * 40;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    starsPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+    starsPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+    starsPos[i * 3 + 2] = r * Math.cos(phi);
+}
+starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
+const starsMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.8, transparent: true, opacity: 0 });
+const starfield = new THREE.Points(starsGeo, starsMat);
+scene.add(starfield);
+
+// --- Atmospheric Particles (Fireflies/Dust) ---
+const partCount = 100;
+const partGeo = new THREE.BufferGeometry();
+const partPos = new Float32Array(partCount * 3);
+const partVel = [];
+for (let i = 0; i < partCount; i++) {
+    partPos[i * 3] = (Math.random() - 0.5) * 60;
+    partPos[i * 3 + 1] = 1 + Math.random() * 10;
+    partPos[i * 3 + 2] = (Math.random() - 0.5) * 60;
+    partVel.push(new THREE.Vector3((Math.random() - 0.5) * 0.02, (Math.random() - 0.5) * 0.02, (Math.random() - 0.5) * 0.02));
+}
+partGeo.setAttribute('position', new THREE.BufferAttribute(partPos, 3));
+const partMat = new THREE.PointsMaterial({ color: 0xffffaa, size: 0.1, transparent: true, opacity: 0.6 });
+const particles = new THREE.Points(partGeo, partMat);
+scene.add(particles);
+
 // Environment
-// Realastic Ocean (Dynamic Waves)
-const oceanGeo = new THREE.PlaneGeometry(500, 500, 128, 128); // Higher segment count for waves
+// Realastic Ocean (Dynamic Waves V2 - Calmer)
+const oceanGeo = new THREE.PlaneGeometry(500, 500, 256, 256);
 const oceanMat = new THREE.MeshStandardMaterial({
     color: '#005b96',
-    roughness: 0.2,
-    metalness: 0.1,
+    roughness: 0.15,
+    metalness: 0.2,
     transparent: true,
-    opacity: 0.9
+    opacity: 0.92
 });
 
-// Custom Shader Injection for Waves
 oceanMat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = { value: 0 };
     shader.vertexShader = `
         uniform float uTime;
         varying float vHeight;
+        varying vec3 vPos;
     ` + shader.vertexShader;
 
     shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
         `
-        vec3 transformed = vec3(position);
-        float wave1 = sin(transformed.x * 0.05 + uTime * 0.8) * 0.2;
-        float wave2 = sin(transformed.z * 0.08 + uTime * 0.6) * 0.2;
-        float wave3 = sin((transformed.x + transformed.z) * 0.03 + uTime * 0.4) * 0.1;
-        transformed.z += wave1 + wave2 + wave3;
-        vHeight = transformed.z;
+        vec3 v = vec3(position);
+        
+        // Calculate distance from center to damp waves near island
+        float dist = length(v.xy);
+        float damping = smoothstep(20.0, 45.0, dist); // No waves inside radius 20, full waves after 45
+        
+        // Calmer WAVE Layer 1 (Swells - reduced from 0.4 to 0.15)
+        float w1 = sin(v.x * 0.05 + uTime * 0.6) * cos(v.y * 0.05 + uTime * 0.5) * 0.15;
+        
+        // Calmer WAVE Layer 2 (Ripples - reduced from 0.15 to 0.08)
+        float w2 = sin(v.x * 0.12 - uTime * 1.0) * 0.08;
+        
+        // Calmer WAVE Layer 3 (Choppy - reduced from 0.08 to 0.04)
+        float w3 = cos((v.x + v.y) * 0.25 + uTime * 2.0) * 0.04;
+        
+        float finalHeight = (w1 + w2 + w3) * damping;
+        v.z += finalHeight;
+        
+        vec3 transformed = vec3(v);
+        vHeight = finalHeight;
+        vPos = transformed;
         `
     );
 
     shader.fragmentShader = `
         varying float vHeight;
+        varying vec3 vPos;
     ` + shader.fragmentShader;
 
     shader.fragmentShader = shader.fragmentShader.replace(
         '#include <color_fragment>',
         `
         #include <color_fragment>
-        // Subtle foam/brightness on wave peaks
-        float diff = smoothstep(0.0, 1.2, vHeight);
-        diffuseColor.rgb += diff * 0.15;
+        float h = vHeight; 
+        
+        // Foam Effect on peaks (adjusted for lower heights)
+        float foam = smoothstep(0.1, 0.25, h);
+        diffuseColor.rgb += foam * vec3(0.3, 0.4, 0.5) * 0.5;
+        
+        // Depth Shading
+        float depth = smoothstep(-0.25, 0.1, h);
+        diffuseColor.rgb *= (0.7 + 0.3 * depth);
+        
+        // Crest highlight
+        float crest = smoothstep(0.2, 0.27, h);
+        diffuseColor.rgb += crest * 0.15;
         `
     );
 
@@ -526,7 +588,7 @@ oceanMat.onBeforeCompile = (shader) => {
 
 const ocean = new THREE.Mesh(oceanGeo, oceanMat);
 ocean.rotation.x = -Math.PI / 2;
-ocean.position.y = -0.6; // Slightly lowered to accommodate waves
+ocean.position.y = -0.8; // Lowered from -0.6 to -0.8 for safety
 ocean.receiveShadow = true;
 scene.add(ocean);
 
@@ -595,13 +657,318 @@ function createShopStall(x, z) {
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.position.y = 2.4;
     roof.rotation.x = 0.2;
-    roof.castShadow = true;
     stall.add(roof);
 
     stall.position.set(x, 0.7, z);
     stall.rotation.y = Math.PI / 4;
     scene.add(stall);
 }
+
+// --- Sun and Moon Visuals ---
+const sunMeshGeo = new THREE.SphereGeometry(3, 32, 32);
+const sunMeshMat = new THREE.MeshBasicMaterial({ color: 0xffffaa });
+const sunMesh = new THREE.Mesh(sunMeshGeo, sunMeshMat);
+scene.add(sunMesh);
+
+const moonMeshGeo = new THREE.SphereGeometry(2, 32, 32);
+const moonMeshMat = new THREE.MeshBasicMaterial({ color: 0xeeeeee });
+const moonMesh = new THREE.Mesh(moonMeshGeo, moonMeshMat);
+scene.add(moonMesh);
+
+// --- Ambient Fish System V2 ---
+class AmbientFishSystem {
+    constructor(scene) {
+        this.scene = scene;
+        this.fishGroup = new THREE.Group();
+        this.scene.add(this.fishGroup);
+        this.fish = [];
+        this.jumpingFish = [];
+        this.splashParticles = [];
+        this.jumpTimer = 5 + Math.random() * 5;
+
+        // Schooling centers (Wandering targets)
+        this.schools = [];
+        this.initSchools();
+        this.initFish();
+    }
+
+    initSchools() {
+        const schoolsCount = 5;
+        for (let i = 0; i < schoolsCount; i++) {
+            const angle = (i / schoolsCount) * Math.PI * 2;
+            const radius = 18 + Math.random() * 10;
+            this.schools.push({
+                center: new THREE.Vector3(Math.cos(angle) * radius, -1.5, Math.sin(angle) * radius),
+                target: new THREE.Vector3(),
+                wanderAngle: Math.random() * Math.PI * 2,
+                speed: 0.5 + Math.random() * 0.5,
+                color: [0x2980b9, 0x1abc9c, 0xe67e22, 0x8e44ad, 0x27ae60][i % 5]
+            });
+            this._pickNewSchoolTarget(this.schools[i]);
+        }
+    }
+
+    _pickNewSchoolTarget(school) {
+        // Schools wander in the ocean
+        school.wanderAngle += (Math.random() - 0.5) * 1.5;
+        const moveDist = 5 + Math.random() * 10;
+        const tx = school.center.x + Math.cos(school.wanderAngle) * moveDist;
+        const tz = school.center.z + Math.sin(school.wanderAngle) * moveDist;
+
+        // Stay in water, avoid island (radius 22)
+        const dist = Math.hypot(tx, tz);
+        if (dist < 25) { // Too close to island
+            school.wanderAngle += Math.PI; // Turn back
+        } else if (dist > 50) { // Too far from island
+            const angleToCenter = Math.atan2(-tz, -tx);
+            school.wanderAngle = angleToCenter + (Math.random() - 0.5);
+        }
+
+        school.target.set(
+            school.center.x + Math.cos(school.wanderAngle) * moveDist,
+            -1.5 - Math.random() * 1.5, // deeper range
+            school.center.z + Math.sin(school.wanderAngle) * moveDist
+        );
+    }
+
+    _createFishMesh(scale = 1, color = 0x2980b9) {
+        const group = new THREE.Group();
+
+        // Body
+        const bodyGeo = new THREE.SphereGeometry(0.12 * scale, 8, 6);
+        bodyGeo.scale(1, 0.6, 2.2);
+        const bodyMat = new THREE.MeshStandardMaterial({
+            color: color, roughness: 0.3, metalness: 0.2,
+            transparent: true, opacity: 0.9
+        });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        group.add(body);
+
+        // Belly
+        const bellyGeo = new THREE.SphereGeometry(0.09 * scale, 8, 4);
+        bellyGeo.scale(1, 0.4, 1.8);
+        const bellyMat = new THREE.MeshStandardMaterial({
+            color: 0xffffff, transparent: true, opacity: 0.6
+        });
+        const belly = new THREE.Mesh(bellyGeo, bellyMat);
+        belly.position.y = -0.05 * scale;
+        group.add(belly);
+
+        // Tail
+        const tailGeo = new THREE.ConeGeometry(0.1 * scale, 0.2 * scale, 3);
+        const tailMat = new THREE.MeshStandardMaterial({
+            color: color, transparent: true, opacity: 0.8, side: THREE.DoubleSide
+        });
+        const tail = new THREE.Mesh(tailGeo, tailMat);
+        tail.position.z = 0.28 * scale;
+        tail.rotation.z = Math.PI / 2;
+        group.add(tail);
+
+        // Fins
+        const finGeo = new THREE.ConeGeometry(0.04 * scale, 0.08 * scale, 3);
+        const fin = new THREE.Mesh(finGeo, tailMat);
+        fin.position.y = 0.1 * scale;
+        group.add(fin);
+
+        group.userData.tail = tail;
+        return group;
+    }
+
+    initFish() {
+        this.schools.forEach(school => {
+            const size = 5 + Math.floor(Math.random() * 5);
+            for (let i = 0; i < size; i++) {
+                const fish = this._createFishMesh(0.8 + Math.random() * 0.4, school.color);
+                fish.position.copy(school.center).add(new THREE.Vector3(
+                    (Math.random() - 0.5) * 5,
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 5
+                ));
+                fish.userData = {
+                    school: school,
+                    velocity: new THREE.Vector3((Math.random() - 0.5) * 2, 0, (Math.random() - 0.5) * 2),
+                    maxSpeed: 2 + Math.random() * 2,
+                    phase: Math.random() * Math.PI * 2,
+                    tail: fish.userData.tail
+                };
+                this.fishGroup.add(fish);
+                this.fish.push(fish);
+            }
+        });
+    }
+
+    update(time, delta) {
+        const t = time * 0.001;
+
+        // Update schools
+        this.schools.forEach(school => {
+            const dist = school.center.distanceTo(school.target);
+            if (dist < 1) {
+                this._pickNewSchoolTarget(school);
+            }
+            const dir = school.target.clone().sub(school.center).normalize();
+            school.center.add(dir.multiplyScalar(school.speed * delta));
+        });
+
+        // Update fish behavior (Boid-ish)
+        this.fish.forEach(fish => {
+            const d = fish.userData;
+            const school = d.school;
+
+            // 1. Move towards school center
+            const toCenter = school.center.clone().sub(fish.position);
+            const distToCenter = toCenter.length();
+            toCenter.normalize();
+
+            // 2. Alignment/Cohersion (Simplified)
+            if (distToCenter > 3) d.velocity.add(toCenter.multiplyScalar(delta * 2));
+
+            // 3. Separation
+            this.fish.forEach(other => {
+                if (other === fish) return;
+                const diff = fish.position.clone().sub(other.position);
+                const dist = diff.length();
+                if (dist < 1.0) {
+                    d.velocity.add(diff.normalize().multiplyScalar(delta * 5));
+                }
+            });
+
+            // 4. Island avoidance
+            const distToIsland = Math.hypot(fish.position.x, fish.position.z);
+            if (distToIsland < 23) {
+                const pushOut = new THREE.Vector3(fish.position.x, 0, fish.position.z).normalize();
+                d.velocity.add(pushOut.multiplyScalar(delta * 20));
+            }
+
+            // 5. Water surface constraint (Ocean is at -0.6)
+            if (fish.position.y > -0.8) {
+                d.velocity.y -= delta * 15;
+            } else if (fish.position.y < -3.0) {
+                d.velocity.y += delta * 10;
+            }
+
+            // Speed limit
+            if (d.velocity.length() > d.maxSpeed) d.velocity.setLength(d.maxSpeed);
+
+            // Move
+            fish.position.add(d.velocity.clone().multiplyScalar(delta));
+
+            // Fixed height clamp for safety
+            if (fish.position.y > -0.75) fish.position.y = -0.75;
+
+            // Rotate to face velocity
+            if (d.velocity.length() > 0.1) {
+                const targetQuat = new THREE.Quaternion().setFromUnitVectors(
+                    new THREE.Vector3(0, 0, -1),
+                    d.velocity.clone().normalize()
+                );
+                fish.quaternion.slerp(targetQuat, 0.1);
+            }
+
+            // Body animations
+            if (d.tail) d.tail.rotation.y = Math.sin(t * 10 + d.phase) * 0.5;
+            // Roll based on turn
+            const yawDelta = d.velocity.x * 0.2; // roughly simulate bank
+            fish.rotation.z = THREE.MathUtils.lerp(fish.rotation.z, yawDelta, 0.1);
+        });
+
+        // Update effects
+        this._updateJumps(delta);
+        this._updateSplashes(delta);
+    }
+
+    _updateJumps(delta) {
+        for (let i = this.jumpingFish.length - 1; i >= 0; i--) {
+            const jf = this.jumpingFish[i];
+            jf.elapsed += delta;
+            const p = jf.elapsed / jf.duration;
+            if (p >= 1) {
+                this.fishGroup.remove(jf.mesh);
+                this.jumpingFish.splice(i, 1);
+                this._createSplash(jf.endX, jf.endZ);
+            } else {
+                jf.mesh.position.x = jf.startX + (jf.endX - jf.startX) * p;
+                jf.mesh.position.z = jf.startZ + (jf.endZ - jf.startZ) * p;
+                jf.mesh.position.y = jf.startY + Math.sin(p * Math.PI) * jf.height;
+                jf.mesh.rotation.x = -Math.sin(p * Math.PI) * 1.5;
+                jf.mesh.rotation.z += delta * 5;
+            }
+        }
+        this.jumpTimer -= delta;
+        if (this.jumpTimer <= 0) {
+            this._triggerJump();
+            this.jumpTimer = 5 + Math.random() * 10;
+        }
+    }
+
+    _updateSplashes(delta) {
+        for (let i = this.splashParticles.length - 1; i >= 0; i--) {
+            const sp = this.splashParticles[i];
+            sp.elapsed += delta;
+            if (sp.elapsed > sp.lifetime) {
+                this.scene.remove(sp.mesh);
+                this.splashParticles.splice(i, 1);
+            } else {
+                const p = sp.elapsed / sp.lifetime;
+                sp.mesh.position.x += sp.vx * delta;
+                sp.mesh.position.y += sp.vy * delta;
+                sp.mesh.position.z += sp.vz * delta;
+                sp.vy -= 10 * delta; // strong gravity
+                sp.mesh.material.opacity = (1 - p);
+                sp.mesh.scale.setScalar(1 - p * 0.5);
+            }
+        }
+    }
+
+    _triggerJump() {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 25 + Math.random() * 15;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        const mesh = this._createFishMesh(1.2, 0x1abc9c);
+        mesh.position.set(x, -0.7, z);
+        this.fishGroup.add(mesh);
+        this._createSplash(x, z);
+        this.jumpingFish.push({
+            mesh: mesh, startX: x, startZ: z, endX: x + (Math.random() - 0.5) * 6, endZ: z + (Math.random() - 0.5) * 6,
+            startY: -0.7,
+            height: 0.8 + Math.random() * 1.2, // Reduced height (max 2.0)
+            duration: 0.8 + Math.random() * 0.4, // Faster, punchier jump
+            elapsed: 0
+        });
+    }
+
+    _createSplash(x, z) {
+        const dropMat = new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.8 });
+        for (let i = 0; i < 12; i++) {
+            const d = new THREE.Mesh(new THREE.SphereGeometry(0.04, 4, 4), dropMat.clone());
+            d.position.set(x, 0.1, z);
+            this.scene.add(d);
+            const a = Math.random() * Math.PI * 2;
+            const s = 1 + Math.random() * 3;
+            this.splashParticles.push({
+                mesh: d, vx: Math.cos(a) * s, vy: 3 + Math.random() * 4, vz: Math.sin(a) * s,
+                lifetime: 0.5 + Math.random() * 0.5, elapsed: 0
+            });
+        }
+    }
+}
+const ambientFish = new AmbientFishSystem(scene);
+
+// --- Markers for Key Locations ---
+const shopMarkerGeo = new THREE.ConeGeometry(0.5, 1, 4);
+const shopMarkerMat = new THREE.MeshBasicMaterial({ color: "#3498db" });
+const shopMarker = new THREE.Mesh(shopMarkerGeo, shopMarkerMat);
+shopMarker.position.set(-8, 5, -8);
+shopMarker.rotation.x = Math.PI;
+scene.add(shopMarker);
+
+const chestMarkerGeo = new THREE.ConeGeometry(0.5, 1, 4);
+const chestMarkerMat = new THREE.MeshBasicMaterial({ color: '#f1c40f' });
+const chestMarker = new THREE.Mesh(chestMarkerGeo, chestMarkerMat);
+chestMarker.position.set(8, 5, -8);
+chestMarker.rotation.x = Math.PI;
+scene.add(chestMarker);
 
 
 function createInventoryChest(x, z) {
@@ -633,7 +1000,43 @@ function createInventoryChest(x, z) {
 }
 
 
-function createNPC(x, z, skinColor, torsoColor, rotation = 0) {
+// --- Floating Text Labels ---
+function createTextLabel(text, color = '#ffffff') {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 256;
+    canvas.height = 64;
+
+    // Clear canvas for perfect transparency
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.font = 'bold 36px Inter, Arial';
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; // Darker for better contrast
+    // rounded bg
+    ctx.beginPath();
+    ctx.roundRect(0, 0, 256, 64, 32);
+    ctx.fill();
+
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 128, 32);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    // depthWrite: false prevents artifacts with fog and transparency
+    // fog: false ensures text stays white at night
+    const spriteMat = new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true,
+        depthWrite: false,
+        fog: false
+    });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(2, 0.5, 1);
+    return sprite;
+}
+
+function createNPC(x, z, skinColor, torsoColor, rotation = 0, name = '') {
     const npc = new THREE.Group();
 
     // Head
@@ -642,6 +1045,13 @@ function createNPC(x, z, skinColor, torsoColor, rotation = 0) {
     const head = new THREE.Mesh(headGeo, headMat);
     head.position.y = 1.25;
     npc.add(head);
+
+    // Name Label
+    if (name) {
+        const label = createTextLabel(name);
+        label.position.y = 1.8;
+        npc.add(label);
+    }
 
     // Eyes
     const eyeGeo = new THREE.BoxGeometry(0.05, 0.05, 0.05);
@@ -678,16 +1088,16 @@ function createNPC(x, z, skinColor, torsoColor, rotation = 0) {
 
 createShopStall(state.stations.shop.position.x, state.stations.shop.position.z);
 createInventoryChest(state.stations.chest.position.x, state.stations.chest.position.z);
-createNPC(state.stations.shop.position.x + 1.5, state.stations.shop.position.z, '#ffdbac', '#2ecc71', -Math.PI / 2); // Jenkins
-createNPC(state.stations.chest.position.x - 1.2, state.stations.chest.position.z, '#8d5524', '#34495e', Math.PI / 2); // Bob
+createNPC(state.stations.shop.position.x + 1.5, state.stations.shop.position.z, '#ffdbac', '#2ecc71', -Math.PI / 2, 'Old Jenkins');
+createNPC(state.stations.chest.position.x - 1.2, state.stations.chest.position.z, '#8d5524', '#34495e', Math.PI / 2, 'Security Bob');
 
 // Spawn Bots
 state.bots.forEach(bot => {
-    bot.mesh = createNPCModel(bot.pos.x, bot.pos.z, '#ffdbac', bot.color, 0, bot.limbs);
+    bot.mesh = createNPCModel(bot.pos.x, bot.pos.z, '#ffdbac', bot.color, 0, bot.limbs, bot.name);
 });
 
 // Helper to create NPC model and return its limbs for animation
-function createNPCModel(x, z, skinColor, torsoColor, rotation, limbsRef) {
+function createNPCModel(x, z, skinColor, torsoColor, rotation, limbsRef, name = '') {
     const npc = new THREE.Group();
 
     // Head
@@ -696,6 +1106,13 @@ function createNPCModel(x, z, skinColor, torsoColor, rotation, limbsRef) {
     const head = new THREE.Mesh(headGeo, headMat);
     head.position.y = 1.25;
     npc.add(head);
+
+    // Name Label
+    if (name) {
+        const label = createTextLabel(name);
+        label.position.y = 1.8;
+        npc.add(label);
+    }
 
     // Torso
     const torsoGeo = new THREE.BoxGeometry(0.5, 0.6, 0.25);
@@ -904,8 +1321,7 @@ window.addEventListener('keyup', (e) => {
 const mobileControls = document.getElementById('mobile-controls');
 const joystickContainer = document.getElementById('joystick-container');
 const joystickKnob = document.getElementById('joystick-knob');
-const mobileFishBtn = document.getElementById('mobile-fish-btn');
-const mobileInteractBtn = document.getElementById('mobile-interact-btn');
+const mobileActionBtn = document.getElementById('mobile-action-btn');
 
 let joystickActive = false;
 let joystickStart = { x: 0, y: 0 };
@@ -966,18 +1382,41 @@ if (joystickContainer) {
     });
 }
 
-if (mobileFishBtn) {
-    mobileFishBtn.addEventListener('touchstart', (e) => {
-        handleFishingInput();
+if (mobileActionBtn) {
+    mobileActionBtn.addEventListener('touchstart', (e) => {
+        // Smart decision: Interaction has priority if in range
+        const playerPos = state.player.mesh.position;
+        const distToShop = Math.hypot(playerPos.x - state.stations.shop.position.x, playerPos.z - state.stations.shop.position.z);
+        const distToChest = Math.hypot(playerPos.x - state.stations.chest.position.x, playerPos.z - state.stations.chest.position.z);
+
+        if (distToShop < state.stations.shop.radius || distToChest < state.stations.chest.radius) {
+            handleInteraction();
+        } else {
+            handleFishingInput();
+        }
         e.preventDefault();
     }, { passive: false });
 }
 
-if (mobileInteractBtn) {
-    mobileInteractBtn.addEventListener('touchstart', (e) => {
-        handleInteraction();
-        e.preventDefault();
-    }, { passive: false });
+function updateMobileActionUI() {
+    if (!mobileActionBtn) return;
+
+    const playerPos = state.player.mesh.position;
+    const distToShop = Math.hypot(playerPos.x - state.stations.shop.position.x, playerPos.z - state.stations.shop.position.z);
+    const distToChest = Math.hypot(playerPos.x - state.stations.chest.position.x, playerPos.z - state.stations.chest.position.z);
+
+    if (distToShop < state.stations.shop.radius) {
+        mobileActionBtn.textContent = '🏪'; // Shop icon
+    } else if (distToChest < state.stations.chest.radius) {
+        mobileActionBtn.textContent = '💬'; // NPC icon
+    } else {
+        // Fishing context
+        if (state.player.isFishing) {
+            mobileActionBtn.textContent = '🎣'; // Reeling icon (can add animation later)
+        } else {
+            mobileActionBtn.textContent = '🎣'; // Standard fish icon
+        }
+    }
 }
 // --- End Mobile Controls ---
 
@@ -1331,10 +1770,73 @@ function animate() {
     ambientLight.intensity = ambientIntensity;
     ocean.material.color = oceanColor;
 
+    // --- Environmental Animations ---
+    if (starfield) {
+        // Fade in stars at night (7 PM - 5 AM)
+        starfield.material.opacity = THREE.MathUtils.lerp(
+            starfield.material.opacity,
+            state.world.isNight ? 0.8 : 0,
+            0.05
+        );
+        starfield.rotation.y += 0.0001; // Slow rotation of sky
+    }
 
-    // Position Sun
+    if (particles) {
+        const positions = particles.geometry.attributes.position.array;
+        for (let i = 0; i < 100; i++) {
+            // Access defined partVel array
+            const v = partVel[i];
+            positions[i * 3] += v.x;
+            positions[i * 3 + 1] += v.y;
+            positions[i * 3 + 2] += v.z;
+
+            // respawn if too far
+            if (Math.abs(positions[i * 3]) > 40 || positions[i * 3 + 1] < 0 || positions[i * 3 + 1] > 15 || Math.abs(positions[i * 3 + 2]) > 40) {
+                positions[i * 3] = (Math.random() - 0.5) * 60;
+                positions[i * 3 + 1] = 1 + Math.random() * 10;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 60;
+            }
+        }
+        particles.geometry.attributes.position.needsUpdate = true;
+
+        // At night তারা turn yellow (fireflies), day they are white (dust)
+        particles.material.color.lerp(
+            state.world.isNight ? new THREE.Color('#ffff00') : new THREE.Color('#ffffff'),
+            0.05
+        );
+    }
+
+    // Floating Markers
+    if (shopMarker) {
+        shopMarker.position.y = 5 + Math.sin(time * 0.003) * 0.5;
+        shopMarker.rotation.y += 0.02;
+    }
+    if (chestMarker) {
+        chestMarker.position.y = 5 + Math.sin(time * 0.003 + 2) * 0.5;
+        chestMarker.rotation.y += 0.02;
+    }
+
+    // Update Ambient Fish
+    if (ambientFish) ambientFish.update(time, delta);
+
+    // Position Celestial Objects
     const sunAngle = (state.world.time / 24) * Math.PI * 2 - Math.PI / 2;
-    sunLight.position.set(Math.cos(sunAngle) * 50, Math.sin(sunAngle) * 50, 0);
+    const moonAngle = sunAngle + Math.PI;
+
+    if (sunMesh) {
+        sunMesh.position.set(Math.cos(sunAngle) * 60, Math.sin(sunAngle) * 60, 0);
+        sunLight.position.copy(sunMesh.position);
+    }
+    if (moonMesh) {
+        moonMesh.position.set(Math.cos(moonAngle) * 60, Math.sin(moonAngle) * 60, 0);
+    }
+
+    // Hide stars during high sun
+    if (starfield) {
+        const sunHeight = Math.sin(sunAngle);
+        if (sunHeight > 0.3) starfield.visible = false;
+        else starfield.visible = true;
+    }
 
     if (controls.isLocked) {
 
@@ -1503,6 +2005,9 @@ function animate() {
             interactPrompt.classList.add('hidden');
             npcDialogue.classList.add('hidden');
         }
+
+        // Update Mobile Action Button Context
+        updateMobileActionUI();
     }
 
 
