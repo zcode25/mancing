@@ -39,7 +39,7 @@ const UPGRADE_ITEMS = {
         { id: 'bag_2', name: 'Large Bag', price: 8000, desc: 'Carry 20 fish', value: 20 }
     ],
     bait: [
-        { id: 'bait_1', name: 'Premium Worms', price: 150, desc: 'Higher chance for Rare fish', value: 0.1 }
+        { id: 'bait_1', name: 'Premium Worms (x5)', price: 150, desc: 'Higher chance for Rare fish', value: 0.1 }
     ]
 };
 
@@ -296,7 +296,7 @@ window.buyUpgrade = (type, id) => {
             state.player.upgrades.bag.name = item.name;
             state.player.upgrades.bag.capacity = item.value;
         } else if (type === 'bait') {
-            state.player.baitCount++;
+            state.player.baitCount += 5; // Bulk buy 5x
         }
         updateUI();
         showMessage(`✅ Purchased ${item.name}!`);
@@ -2318,8 +2318,8 @@ function buyBotUpgrade(bot, type) {
         const bagCapacity = bot.upgrades.bag === 2 ? 20 : (bot.upgrades.bag === 1 ? 10 : 5);
         let boughtCount = 0;
         // Buy multiple packs if bot is wealthy and has room for bait
-        while (bot.money >= 50 && bot.baitCount < (bagCapacity * 2)) {
-            bot.money -= 50;
+        while (bot.money >= 150 && bot.baitCount < (bagCapacity * 2)) {
+            bot.money -= 150;
             bot.baitCount += 5;
             boughtCount += 5;
             // Stop if they should save money for a major upgrade
