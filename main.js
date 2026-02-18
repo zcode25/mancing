@@ -150,7 +150,6 @@ const soundToggle = document.getElementById('sound-toggle');
 const startScreen = document.getElementById('start-screen');
 const startBtn = document.getElementById('start-btn');
 const gameOverModal = document.getElementById('game-over-modal');
-const finishBtn = document.getElementById('finish-btn');
 const gameStatsEl = document.getElementById('game-stats');
 const uiOverlay = document.getElementById('ui-overlay');
 
@@ -2428,10 +2427,6 @@ startBtn.onclick = () => {
 
     // Lock pointer to start
     controls.lock();
-};
-
-finishBtn.onclick = () => {
-    endGame();
 };
 
 function endGame() {
