@@ -131,7 +131,15 @@
 
         <canvas id="gameCanvas"></canvas>
     </div>
-    <script type="module" src="/main.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.182.0/build/three.module.js",
+                "three/examples/jsm/controls/PointerLockControls": "https://unpkg.com/three@0.182.0/examples/jsm/controls/PointerLockControls.js"
+            }
+        }
+    </script>
+    <script type="module" src="./main.js"></script>
 </body>
 
 </html>
